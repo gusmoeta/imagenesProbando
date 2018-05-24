@@ -3,17 +3,11 @@
 
 class Config
 {
-   public static $dns="mysql:host=localhost; dbname=ajaximagenes"; /*  id3307463_alimentacion */
-   public static $user="root"; /* id3307463_gusmoeta */
-   public static $clave=""; /*gusmoeta*/
+   public static $dns="mysql:host=localhost; dbname=ajaximagenes"; 
+   public static $user="root"; 
+   public static $clave=""; 
    public static $mvc_vis_css = "estilo.css";
-    /*
-    static public $mvc_bd_hostname = "localhost";
-    static public $mvc_bd_nombre   = "id3307463_alimentacion";
-    static public $mvc_bd_usuario  = "id3307463_gusmoeta";
-    static public $mvc_bd_clave    = "gusmoeta";
-   
-    */
+   /*static public $mvc_bd_hostname = "localhost";*/
 }
 
 class Model
@@ -46,32 +40,32 @@ class Model
 	public function __clon(){
 		trigger_error("No se puede clonar esta clase", E_USER_ERROR);
     }
-    
+
+
+//COMIENZO DE FUNCIONALIDADES    
 
 public function urlImg()
      {	
 		 try{
 			 $consulta = "select id, nombreImgBD from imagenes";
              $result = $this->conexion->query($consulta);
-             //var_dump($result);
+            
 			 $alimentos = array();
              while ($row = $result->fetch(PDO::FETCH_ASSOC) )             
 			 {
-                // echo "guardando imagen";
+               
 				 $imagenes[] = $row;
 			 }
 
 		 }catch (PDOException $e){
 			 die("Fallo al conectar con damealimentos " . $e->getMessage() ); //necesario?
 		 }
-         //var_dump($imagenes);
+        
          return $imagenes;
      }
 
 public function subirImagenurl($nombrImg, $id){
 echo "MODEL SUBIRIMAGENURL NOMBRE NUEVO IMAGEN $nombrImg <br>";
-   // $subido = false;
-  //=3
  
     try{
         $consulta = "update imagenes set nombreImgBD = '$nombrImg' where id = $id";
@@ -113,11 +107,18 @@ public function buscarNombreConIdImg($idImg){
 
 
  class Controller {
+
  public function listar()
  {
+    //  echo __LINE__ . "<br>";
+    //  echo __FILE__ . "<br>";
+    //  echo __METHOD__    . "<br>";     
+    //  echo "------------ <br>";
      $m = Model::singleton();
      
      $params = $m->urlImg();
+
+
 
         return $params;
     }
@@ -145,22 +146,18 @@ public function subiraBBDD($nombreImagen, $idimagen)
 
  public function subiraCarpeta()
  {
-    if(is_uploaded_file($_FILES["imagen"]["tmp_name"])){ //si se ha subido a la temporar
+     //SI SE HA SUBIDO A LA TEMPORAR
+    if(is_uploaded_file($_FILES["imagen"]["tmp_name"])){ 
         echo "METOTDO SUBIR INICIO <br>";    
-		//echo $_FILES["imagen"]["tmp_name"];
-		$nombredirectorioFin = "img/";					//la ruta final
+        
+        //LA RUTA FINAL
+		$nombredirectorioFin = "img/";				
 		if(!is_dir($nombredirectorioFin)){
             mkdir("img");
 		}
-		
-		
-		
-		$nombrefichero = $_FILES["imagen"]["name"];		//el nombre el fichero
-		
-        //$nombreCompleto = $nombredirectorioFin . $nombrefichero;
-        //echo $nombreCompleto;
-        
-        ///
+		//el nombre el fichero
+		$nombrefichero = $_FILES["imagen"]["name"];		
+		      
         $posPuntoSeparador=strpos($nombrefichero, ".");
         
         $nombre=substr( $nombrefichero, 0, ($posPuntoSeparador) ) . "-";
@@ -208,35 +205,36 @@ public function subiraBBDD($nombreImagen, $idimagen)
  public function borrarFotoCarpeta()
  {  
     echo "BORRAR FOTO <br>";
-    $idPaBorrarFoto = $_REQUEST['id']; //id imagen a subir, coincidente con la id imagen ya en BBDD
-   // echo "idPaBorrarFoto <br>";
+    //ID IMAGEN A SUBIR, COINCIDENTE CON LA ID IMAGEN YA EN BBDD
+    $idPaBorrarFoto = $_REQUEST['id'];
+  
 
     //CON ID ACTUAL ANTES DLE LACAMBIAZO EN BBDD BUSCO EL NOMBRE DE LA FOTO ANTES DE SER CAMBIADA
     $nombreImagenAntesdeSerCambiada = self::buscarNombreConId($idPaBorrarFoto);
     echo "contrller borrarfotocarpeta $nombreImagenAntesdeSerCambiada NOMBRTEIMAGENANTES DE ser cambiada<br>";
 
     $carpetaimg  = "./img";
-    // if()
+    // CUIDADO CONTROLAR PARA Q EN CASO DE FALLO AL SUBIR LA FOTO A LA BBDD NO SE GUARDE LA IMG EN LA CARPETA
         if(is_dir($carpetaimg)){
 
             $recurso = @opendir($carpetaimg) or die('No se pudo abrir el recurso');
             $encontradaImg = false;
             $entrada = readdir($recurso);
-            //echo "$entrada <br>";
+           
             while ($entrada !== false || $encontradaImg !== true){
             
                 if($nombreImagenAntesdeSerCambiada == $entrada){
-                    //echo "$nombreImagenAntesdeSerCambiada <-> $entrada <br>";
+           
                     $encontradaImg = true;
 
                     //una vez encontrada la borro
                     $b = unlink("./img/$entrada");
-                    //echo "Borrado de fichero $b <br>";
+                   
                 }
                 if($entrada !== false || $encontradaImg !== true){
                     $entrada = readdir($recurso);
                 }
-                //echo "$entrada <br>";
+                
             }
             closedir($recurso);
         }
@@ -249,54 +247,44 @@ public function subiraBBDD($nombreImagen, $idimagen)
 
 
 
-
-
-//  function subiraCarpeta(){}
-// function borrarFotoCarpeta($control){}
-
-
+//LOGICA CONTROLADORA, AKI COMIENZA TODO
 if(!isset($control)) $control = new Controller();
 
 if( empty($_REQUEST['nomimg']) ){
  
     echo "IF LISTAR <br>";
+    echo (__LINE__-1) . "<br>";
+    echo __FUNCTION__    . "<br>"; 
+    echo __FILE__ . "<br>";
+    echo "--------FIN------<br>";
     $urlI = $control->listar();
     
   
     include_once 'noindex.php';   
-    
+    //QUIZAS DEBERIA CAMBIAR LA CONDICION
 }else if( !$_FILES['imagen']['error'] ){
     //SUBIR IMAGEN y BORRARLAR DE LA CARPETA
      echo "ELSE IF <br>";
-    // echo "vardamp <br>",
-    // var_dump($_FILES['imagen']['error']);
-    // echo " imagen intento de subirla <br>";
-    // echo !empty($_FILES['imagen']); 
+     echo (__LINE__-1) . "<br>";
+     echo __FUNCTION__    . "<br>"; 
+     echo __FILE__ . "<br>";
+     echo "--------FIN------<br>";
+     $urlI = $control->listar();
+  
 
-    //SUBE Y DEVUELVE NOMBE PARA PODER GUARDAR BIEN LA FOTO EN LA CARPTETA ABAJO
-    //$nombreFichero = subiraCarpeta(); 
+    //SUBE Y DEVUELVE NOMBE PARA PODER GUARDAR BIEN LA FOTO EN LA CARPTETA ABAJO   
     $nombreFichero = $control->subiraCarpeta(); 
-    //echo "Nombre fichero $nombreFichero <br>";
-    //BORRO FOTO PREVIA DE LA CARPETA IMG
-    //$borradaBool = borrarFotoCarpeta($control);
+   
+    //BORRO FOTO PREVIA DE LA CARPETA IMG    
     $borradaBool = $control->borrarFotoCarpeta();
     //echo "Borrado " . $borradaBool . " Borrado <br>";
     
-  
-    // echo "nombre imagen <br>";
-    // echo $_FILES["imagen"]["name"];
-    // echo "ID IMAGEN A CAMBIAR <br>";
-    // echo $_FILES["imagen"]["id"];
-    // echo "REQUEST ANTES DE SUBIR <br>";
-    // var_dump($_REQUEST);
-     $id = $_REQUEST['id'];
-    // echo $id . "ID ANTES DE SUBIR LA IMAGEN <BR>";
+    //id dela img en la bbdd
+     $id = $_REQUEST['id'];   
 
     //MANDA el ID de la imgaen en web para asociar en ese id una nueva imagen, 
     //por eso id e id son lo mismo abajo
-    // PARA METER Y DDVUELVE DEL METIDO, EN ESTE CASO EL MISMO
-    $id = $control->subiraBBDD($nombreFichero, $id);
-    //echo "subido o no " . $id . "<br>";
+    $id = $control->subiraBBDD($nombreFichero, $id);  
        
     $urlI = $control->listar();
     
@@ -305,6 +293,11 @@ if( empty($_REQUEST['nomimg']) ){
 }else{
     //SI SE DA A SUBIR Y NO HAY IMAGEN SE MANTIENE IGUAL
     echo "ELSE <br>";
+    echo (__LINE__-1) . "<br>";
+    echo __FUNCTION__    . "<br>"; 
+    echo __FILE__ . "<br>";
+    echo "--------FIN------<br>";
+    $urlI = $control->listar();
     
     echo "No se ha podido cambiar imagenor q no se seleccionao imagen <br>";
     $urlI = $control->listar();
@@ -312,9 +305,27 @@ if( empty($_REQUEST['nomimg']) ){
 }
 
 
+//Seguimiento del flujo del programa
+//poner en cada metodo de clase
+
+//echo extra informativo ej. 
+echo ( __LINE__ - 1 ) . "<br>"; 
+echo __FILE__ . "<br>"; //el file se puede quitar si son pocos ficheros
+echo __METHOD__    . "<br>";     
+echo "-------FIN-------<br>";
+
+//
+
+//Seguimiento de variable con echo o vardump (en XAMP)
+
+//echo extra informativo ej. if else etc
+echo ( __LINE__ + 3 ) . "<br>"; 
+echo __METHOD__    . "<br>";   //SI LO HUVIERA
+echo __FILE__ . "<br>";
+echo "sustituye string por variable a imprimir <br>"; //echo "$variable <br>";
+echo "-------FIN-------<br>";
 
 
-
-
+//meterlo en etiqueta azul flujo verde varible
 
 ?>
